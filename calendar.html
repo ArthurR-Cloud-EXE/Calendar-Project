@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WorkFlow Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/png" href="app_icon.png" />
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" width="24" height="24">
+          <path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm-5-5H7v-2h7v2z"/>
+        </svg>
+        <h1>WorkFlow</h1>
+      </div>
+      <div class="calendar-nav">
+        <button id="prev" aria-label="Previous Month">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="none" stroke="currentColor" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <span id="monthLabel">
+          <select id="monthSelect" class="nav-select" aria-label="Select Month"></select>
+          <select id="yearSelect" class="nav-select" aria-label="Select Year"></select>
+        </span>
+        <button id="next" aria-label="Next Month">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="none" stroke="currentColor" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+      <button id="themeToggle" class="theme-toggle" aria-label="Toggle Theme">
+        <svg class="sun-icon" viewBox="0 0 24 24" width="20" height="20">
+          <path fill="currentColor" d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0-5a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0V3a1 1 0 0 1 1-1zm0 15a1 1 0 0 1 1 1v2a1 1 0 0 1-2 0v-2a1 1 0 0 1 1-1zm10-7a1 1 0 0 1-1 1h-2a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1zM5 12a1 1 0 0 1-1 1H2a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1zm13.657-6.657a1 1 0 0 1 0 1.414l-1.414 1.414a1 1 0 1 1-1.414-1.414l1.414-1.414a1 1 0 0 1 1.414 0zM7.757 16.243a1 1 0 0 1 0 1.414l-1.414 1.414a1 1 0 1 1-1.414-1.414l1.414-1.414a1 1 0 0 1 1.414 0zm10.899 0a1 1 0 0 1 1.414 0l1.414 1.414a1 1 0 0 1-1.414 1.414l-1.414-1.414a1 1 0 0 1 0-1.414zM6.343 7.757a1 1 0 0 1 1.414-1.414L9.172 7.757a1 1 0 1 1-1.414 1.414L6.343 7.757z"/>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" width="20" height="20">
+          <path fill="currentColor" d="M12.3 22h-.1c-5.5 0-10-4.5-10-10 0-4.8 3.5-8.9 8.2-9.8.5-.1 1 .2 1.2.7.2.5 0 1.1-.4 1.4-2.8 2.3-4.2 5.9-3.7 9.5.6 3.9 3.7 7.1 7.6 7.7 3.6.5 7.2-1 9.5-3.7.3-.4.9-.6 1.4-.4.5.2.8.7.7 1.2-.9 4.6-5 8.1-9.7 8.2z"/>
+        </svg>
+      </button>
+    </header>
+    
+    <div class="dashboard">
+      <section class="add-task-section">
+        <form id="taskForm" class="task-form-vertical">
+          <div class="form-title">
+            Add Task for <span id="formDayLabel">Select a date</span>
+          </div>
+          <div class="vertical-inputs">
+            <input id="taskInput" placeholder="Add a new task..." required autocomplete="off" />
+            
+            <div class="time-inputs-row">
+              <div class="time-input-group">
+                <label for="taskStartTime">Start Time</label>
+                <input id="taskStartTime" type="time" title="Start Time" aria-label="Start Time" />
+              </div>
+              <div class="time-input-group">
+                <label for="taskEndTime">End Time</label>
+                <input id="taskEndTime" type="time" title="End Time" aria-label="End Time" />
+              </div>
+            </div>
+
+            <input id="taskNoteInput" placeholder="Add an optional note..." autocomplete="off" />
+            <div class="tracking-input-row">
+              <select id="taskCourierSelect" title="Courier Company" aria-label="Courier Company">
+                <option value="Star Track">Star Track</option>
+                <option value="Australia Post">Australia Post</option>
+                <option value="Toll">Toll</option>
+                <option value="TNT">TNT</option>
+                <option value="DHL">DHL</option>
+                <option value="FedEx">FedEx</option>
+                <option value="CouriersPlease">CouriersPlease</option>
+                <option value="Aramex">Aramex</option>
+              </select>
+              <input id="taskTrackingInput" placeholder="Tracking #..." autocomplete="off" />
+            </div>
+            
+            <select id="taskClientSelect" title="Client Company" aria-label="Client Company">
+              <option value="">Select Client...</option>
+              <option value="BSO Client">BSO Client</option>
+              <option value="TFX Client">TFX Client</option>
+              <option value="Reximo Client">Reximo Client</option>
+              <option value="Future Shop Client">Future Shop Client</option>
+            </select>
+            <input id="taskRef1Input" placeholder="Ref 1 (Sales Order or Person)" autocomplete="off" />
+            <input id="taskRef2Input" placeholder="Ref 2 (Ticket Number/Job Number)" autocomplete="off" />
+            
+            <div class="tags-field-group">
+              <label class="field-label">Tags</label>
+              <div id="taskTagsContainer" class="tags-selection-container"></div>
+            </div>
+            
+            <div id="issuePeopleGroup" class="form-group hidden">
+              <label for="taskIssuePeople" class="field-label">Issue - Associated People (one per line)</label>
+              <textarea id="taskIssuePeople" placeholder="Enter names of associated people..." rows="3"></textarea>
+            </div>
+            
+            <button type="submit" aria-label="Add Task">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="2.5" d="M12 5v14M5 12h14"/></svg>
+              <span>Add Task</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <main class="calendar-section">
+        <div id="calendar" class="calendar-container">
+          <div id="weekdays" class="weekdays-grid"></div>
+          <div id="days" class="days-grid"></div>
+        </div>
+      </main>
+      
+      <aside id="dayPanel" class="tasks-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-wrapper">
+            <span class="sidebar-subtitle">Tasks for</span>
+            <h2 id="dayTitle">Select a date</h2>
+          </div>
+          <button id="closePanel" class="close-btn" aria-label="Close panel">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="none" stroke="currentColor" stroke-width="2" d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        
+        <div class="tasks-container">
+          <div id="tasksList" class="tasks-list"></div>
+        </div>
+        
+      </aside>
+    </div>
+  </div>
+  <!-- Incident Report Print Modal -->
+  <div id="printModal" class="print-modal hidden">
+    <div class="print-modal-content">
+      <div class="print-controls">
+        <button id="printBtn" class="btn-print-action">Print / Save PDF</button>
+        <button id="closePrintBtn" class="btn-print-close">Close Report</button>
+      </div>
+      <div id="printReportArea" class="print-report-area"></div>
+    </div>
+  </div>
+
+  <script src="calendar.js"></script>
+</body>
+</html>
