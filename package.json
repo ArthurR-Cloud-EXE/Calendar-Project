@@ -1,0 +1,42 @@
+{
+  "name": "workflow-calendar",
+  "version": "1.0.0",
+  "description": "A browser-based calendar and task manager for operational organisation.",
+  "main": "main.js",
+  "author": "Arthur Richardson",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never"
+  },
+  "build": {
+    "appId": "com.arthurrichardson.workflowcalendar",
+    "productName": "WorkFlow Calendar",
+    "files": [
+      "calendar.html",
+      "calendar.js",
+      "styles.css",
+      "app_icon.png",
+      "main.js"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "app_icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^42.0.0",
+    "electron-builder": "^26.0.0"
+  }
+}
