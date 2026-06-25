@@ -62,20 +62,21 @@
             </div>
 
             <input id="taskNoteInput" placeholder="Add an optional note..." autocomplete="off" />
+            <input id="taskLocationInput" placeholder="Location (optional)..." autocomplete="off" />
+
             <div class="tracking-input-row">
-              <select id="taskCourierSelect" title="Courier Company" aria-label="Courier Company">
-                <option value="Star Track">Star Track</option>
-                <option value="Australia Post">Australia Post</option>
-                <option value="Toll">Toll</option>
-                <option value="TNT">TNT</option>
-                <option value="DHL">DHL</option>
-                <option value="FedEx">FedEx</option>
-                <option value="CouriersPlease">CouriersPlease</option>
-                <option value="Aramex">Aramex</option>
+              <select id="taskCategorySelect" title="Category" aria-label="Category">
+                <option value="Personal">Personal</option>
+                <option value="Family">Family</option>
+                <option value="Home">Home</option>
+                <option value="Work">Work</option>
+                <option value="Other">Other</option>
               </select>
-              <input id="taskTrackingInput" placeholder="Tracking #..." autocomplete="off" />
+              <input id="taskRefInput" placeholder="Reference (optional)..." autocomplete="off" />
             </div>
-            
+
+            <input id="taskPeopleInput" placeholder="People involved (optional)..." autocomplete="off" />
+
             <div class="tags-field-group">
               <label class="field-label">Tags</label>
               <div id="taskTagsContainer" class="tags-selection-container"></div>

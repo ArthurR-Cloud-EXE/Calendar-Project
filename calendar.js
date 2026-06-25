@@ -12,9 +12,13 @@ const taskInput = document.getElementById('taskInput');
 const taskStartTimeInput = document.getElementById('taskStartTime');
 const taskEndTimeInput = document.getElementById('taskEndTime');
 const taskNoteInput = document.getElementById('taskNoteInput');
-const taskCourierSelect = document.getElementById('taskCourierSelect');
-const taskTrackingInput = document.getElementById('taskTrackingInput');
+const taskLocationInput = document.getElementById('taskLocationInput');
+const taskCategorySelect = document.getElementById('taskCategorySelect');
+const taskRefInput = document.getElementById('taskRefInput');
+const taskPeopleInput = document.getElementById('taskPeopleInput');
 const closePanel = document.getElementById('closePanel');
+
+const CATEGORIES = ['Personal', 'Family', 'Home', 'Work', 'Other'];
 
 const taskTagsContainer = document.getElementById('taskTagsContainer');
 
@@ -58,40 +62,6 @@ function renderAddTags() {
   });
 }
 
-const COURIERS = {
-  'Star Track': {
-    name: 'Star Track',
-    url: (no) => `https://startrack.com.au/track/details/${encodeURIComponent(no)}`
-  },
-  'Australia Post': {
-    name: 'Australia Post',
-    url: (no) => `https://auspost.com.au/mypost/track/#/details/${encodeURIComponent(no)}`
-  },
-  'Toll': {
-    name: 'Toll',
-    url: (no) => `https://www.mytoll.com/track?consignmentNumber=${encodeURIComponent(no)}`
-  },
-  'TNT': {
-    name: 'TNT',
-    url: (no) => `https://www.tnt.com/express/en_au/site/shipping-tools/tracking.html?cons=${encodeURIComponent(no)}`
-  },
-  'DHL': {
-    name: 'DHL',
-    url: (no) => `https://www.dhl.com/au-en/home/tracking/tracking-express.html?submit=1&tracking-id=${encodeURIComponent(no)}`
-  },
-  'FedEx': {
-    name: 'FedEx',
-    url: (no) => `https://www.fedex.com/apps/fedextrack/?tracknumbers=${encodeURIComponent(no)}`
-  },
-  'CouriersPlease': {
-    name: 'CouriersPlease',
-    url: (no) => `https://www.couriersplease.com.au/Tools/Track/Tracking-Results?consignment=${encodeURIComponent(no)}`
-  },
-  'Aramex': {
-    name: 'Aramex',
-    url: (no) => `https://www.aramex.com.au/tools/track/?l=${encodeURIComponent(no)}`
-  }
-};
 const themeToggle = document.getElementById('themeToggle');
 const formDayLabel = document.getElementById('formDayLabel');
 
@@ -158,291 +128,6 @@ function parseTimestamp(tsStr) {
   return isNaN(parsed) ? new Date(0) : new Date(parsed);
 }
 
-function formatDateTime(dateStr, timeStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'T' + (timeStr || '00:00') + ':00');
-  return d.toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
-
-function migrateTrackingAddedAt() {
-  const m = getTasksMap();
-  let modified = false;
-  
-  for (const dateStr in m) {
-    if (Array.isArray(m[dateStr])) {
-      m[dateStr].forEach(task => {
-        if (task && typeof task === 'object') {
-          if (task.trackingNo && !task.trackingAddedAt) {
-            let timeStr = task.startTime || '09:00';
-            task.trackingAddedAt = formatDateTime(dateStr, timeStr);
-            modified = true;
-          }
-        }
-      });
-    }
-  }
-  
-  if (modified) {
-    saveTasksMap(m);
-  }
-}
-migrateTrackingAddedAt();
-
-function formatJourneyDate(d) {
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const w = weekdays[d.getDay()];
-  const day = d.getDate();
-  const m = months[d.getMonth()];
-  
-  let hours = d.getHours();
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const ampm = hours >= 12 ? 'pm' : 'am';
-  hours = hours % 12;
-  hours = hours ? hours : 12; // 0 should be 12
-  
-  return `${w} ${day} ${m}, ${hours}.${minutes}${ampm}`;
-}
-
-function getTrackingJourney(task, taskDateStr) {
-  const courier = (task.courier || 'Star Track').trim();
-  const trackingNo = task.trackingNo;
-  if (!trackingNo) return [];
-
-  let baseDate = new Date(taskDateStr + 'T00:00:00');
-  if (task.trackingAddedAt) {
-    const parsed = parseTimestamp(task.trackingAddedAt);
-    if (parsed && parsed.getTime() > 0) {
-      baseDate = parsed;
-      baseDate.setHours(0, 0, 0, 0);
-    }
-  }
-
-  function setTime(date, h, m) {
-    const d = new Date(date);
-    d.setHours(h, m, 0, 0);
-    return d;
-  }
-
-  function addDays(date, days) {
-    const d = new Date(date);
-    d.setDate(d.getDate() + days);
-    return d;
-  }
-
-  let rawMilestones = [];
-
-  // ── Star Track ─────────────────────────────────────────────────────────────
-  if (courier === 'Star Track') {
-    rawMilestones = [
-      {
-        stage: 'sender',
-        status: 'Label created by sender',
-        details: 'Shipping information received by Star Track',
-        time: setTime(baseDate, 9, 53)
-      },
-      {
-        stage: 'sender',
-        status: 'Label created by sender',
-        details: 'Shipping information approved by Star Track',
-        time: setTime(baseDate, 10, 0)
-      },
-      {
-        stage: 'got_it',
-        status: "We've got it",
-        details: 'Picked up from Sender – SILVERWATER NSW',
-        time: setTime(baseDate, 11, 38)
-      },
-      {
-        stage: 'transit',
-        status: "It's on its way",
-        details: 'In transit – CHULLORA NSW',
-        time: setTime(baseDate, 12, 0)
-      },
-      {
-        stage: 'transit',
-        status: "It's on its way",
-        details: 'Item processed at sorting facility – SYDNEY NSW',
-        time: setTime(baseDate, 15, 12)
-      },
-      {
-        stage: 'transit',
-        status: "It's on its way",
-        details: 'Item processed at sorting facility – SYDNEY NSW',
-        time: setTime(baseDate, 15, 14)
-      },
-      {
-        stage: 'transit',
-        status: "It's on its way",
-        details: 'Item processed at sorting facility – BRISBANE QLD',
-        time: setTime(addDays(baseDate, 1), 8, 36)
-      },
-      {
-        stage: 'today',
-        status: "It's coming today",
-        details: 'Onboard for delivery – DARRA QLD',
-        time: setTime(addDays(baseDate, 1), 10, 17)
-      },
-      {
-        stage: 'delivered',
-        status: 'Delivered',
-        details: 'Delivered – MOUNT OMMANEY QLD',
-        time: setTime(addDays(baseDate, 1), 11, 35)
-      }
-    ];
-
-  // ── Australia Post ─────────────────────────────────────────────────────────
-  } else if (courier === 'Australia Post') {
-    rawMilestones = [
-      {
-        stage: 'sender',
-        status: 'Shipping label created',
-        details: 'Sender has created a shipping label for this item',
-        time: setTime(baseDate, 9, 41)
-      },
-      {
-        stage: 'got_it',
-        status: 'Parcel received',
-        details: 'We have received your parcel – SYDNEY NSW',
-        time: setTime(baseDate, 11, 15)
-      },
-      {
-        stage: 'transit',
-        status: 'Your parcel is on its way',
-        details: 'Parcel processed at Australia Post facility – SYDNEY NSW',
-        time: setTime(baseDate, 13, 22)
-      },
-      {
-        stage: 'transit',
-        status: 'Your parcel is on its way',
-        details: 'In transit to next facility – STRATHFIELD NSW',
-        time: setTime(baseDate, 16, 5)
-      },
-      {
-        stage: 'transit',
-        status: 'Your parcel is on its way',
-        details: 'Parcel processed at Australia Post facility – BRISBANE QLD',
-        time: setTime(addDays(baseDate, 1), 7, 48)
-      },
-      {
-        stage: 'transit',
-        status: 'Your parcel is on its way',
-        details: 'In transit to delivery facility – ARCHERFIELD QLD',
-        time: setTime(addDays(baseDate, 1), 9, 10)
-      },
-      {
-        stage: 'today',
-        status: 'Out for delivery',
-        details: 'Your parcel is with our delivery driver – DARRA QLD',
-        time: setTime(addDays(baseDate, 1), 10, 33)
-      },
-      {
-        stage: 'delivered',
-        status: 'Delivered',
-        details: 'Your parcel has been delivered – MOUNT OMMANEY QLD',
-        time: setTime(addDays(baseDate, 1), 11, 51)
-      }
-    ];
-
-  // ── Generic fallback (Toll, TNT, DHL, FedEx, etc.) ─────────────────────────
-  } else {
-    rawMilestones = [
-      {
-        stage: 'sender',
-        status: 'Shipment booked',
-        details: `Shipment booked with ${courier}`,
-        time: setTime(baseDate, 9, 30)
-      },
-      {
-        stage: 'got_it',
-        status: 'Collected',
-        details: `Parcel collected by ${courier} – SYDNEY NSW`,
-        time: setTime(baseDate, 11, 0)
-      },
-      {
-        stage: 'transit',
-        status: 'In transit',
-        details: `In transit – ${courier} facility – SYDNEY NSW`,
-        time: setTime(baseDate, 14, 0)
-      },
-      {
-        stage: 'transit',
-        status: 'In transit',
-        details: `In transit – ${courier} facility – BRISBANE QLD`,
-        time: setTime(addDays(baseDate, 1), 8, 0)
-      },
-      {
-        stage: 'today',
-        status: 'Out for delivery',
-        details: `With delivery driver – DARRA QLD`,
-        time: setTime(addDays(baseDate, 1), 10, 0)
-      },
-      {
-        stage: 'delivered',
-        status: 'Delivered',
-        details: `Delivered – MOUNT OMMANEY QLD`,
-        time: setTime(addDays(baseDate, 1), 11, 30)
-      }
-    ];
-  }
-
-  const now = new Date();
-  return rawMilestones.map(m => {
-    const isUnlocked = now.getTime() >= m.time.getTime();
-    return {
-      stage: m.stage,
-      status: m.status,
-      details: m.details,
-      timestamp: m.time,
-      formattedTime: formatJourneyDate(m.time),
-      unlocked: isUnlocked
-    };
-  });
-}
-
-function renderJourneyUI(container, task, dateStr) {
-  const courierName   = (task.courier || 'Star Track').trim();
-  const trackingNo    = (task.trackingNo || '').trim();
-  const courierConfig = COURIERS[courierName] || COURIERS['Star Track'];
-  const trackingUrl   = courierConfig.url(trackingNo);
-
-  // Courier-specific colours & icons
-  const courierMeta = {
-    'Star Track':      { icon: '⭐', color: '#e50000', lightBg: '#fff1f1', darkBg: 'rgba(229,0,0,0.12)' },
-    'Australia Post':  { icon: '🇦🇺', color: '#e8182a', lightBg: '#fff1f1', darkBg: 'rgba(232,24,42,0.12)' },
-    'Toll':            { icon: '🚛', color: '#f5821f', lightBg: '#fff7ee', darkBg: 'rgba(245,130,31,0.12)' },
-    'TNT':             { icon: '📦', color: '#ff6200', lightBg: '#fff4ee', darkBg: 'rgba(255,98,0,0.12)' },
-    'DHL':             { icon: '📫', color: '#ffcc00', lightBg: '#fffbee', darkBg: 'rgba(255,204,0,0.12)' },
-    'FedEx':           { icon: '📮', color: '#4d148c', lightBg: '#f5f0ff', darkBg: 'rgba(77,20,140,0.12)' },
-    'CouriersPlease':  { icon: '🚚', color: '#0072bc', lightBg: '#eef6ff', darkBg: 'rgba(0,114,188,0.12)' },
-    'Aramex':          { icon: '🌐', color: '#e10014', lightBg: '#fff1f1', darkBg: 'rgba(225,0,20,0.12)' },
-  };
-  const meta = courierMeta[courierName] || { icon: '🚚', color: 'var(--primary)', lightBg: 'var(--primary-light)', darkBg: 'rgba(79,70,229,0.12)' };
-
-  container.innerHTML = `
-    <div class="tracking-card">
-      <div class="tracking-card-icon" style="background:${meta.lightBg}; color:${meta.color};">${meta.icon}</div>
-      <div class="tracking-card-body">
-        <div class="tracking-card-courier">${courierName}</div>
-        <div class="tracking-card-number">${trackingNo}</div>
-        <button class="tracking-card-btn" id="trackOpenBtn" style="background:${meta.color};">
-          🌐 Open Tracking Page
-        </button>
-        <div class="tracking-card-hint">Opens the live tracking page in your browser</div>
-      </div>
-    </div>
-  `;
-
-  container.querySelector('#trackOpenBtn').addEventListener('click', () => {
-    window.open(trackingUrl, '_blank', 'noopener,noreferrer');
-  });
-}
-
 const monthsList = [
 
   "January", "February", "March", "April", "May", "June",
@@ -490,12 +175,14 @@ function tasksFor(dateStr){
   // Normalize string-only tasks to objects for backward compatibility
   const normalized = raw.map(item => {
     if (typeof item === 'string') {
-      return { text: item, completed: false, note: '', courier: 'Star Track', trackingNo: '', subtasks: [], startTime: '', endTime: '', tags: [], isReport: false, incidents: [] };
+      return { text: item, completed: false, note: '', location: '', category: 'Personal', ref: '', people: '', subtasks: [], startTime: '', endTime: '', tags: [], isReport: false, incidents: [] };
     }
     if (item && typeof item === 'object') {
       if (!('note' in item)) item.note = '';
-      if (!('courier' in item)) item.courier = 'Star Track';
-      if (!('trackingNo' in item)) item.trackingNo = '';
+      if (!('location' in item)) item.location = '';
+      if (!('category' in item)) item.category = 'Personal';
+      if (!('ref' in item)) item.ref = '';
+      if (!('people' in item)) item.people = '';
       if (!('subtasks' in item)) {
         item.subtasks = [];
       } else {
@@ -828,32 +515,45 @@ function renderTasks(){
       noteInput.rows = 4;
       editor.appendChild(noteInput);
       
+      const locationInput = document.createElement('input');
+      locationInput.type = 'text';
+      locationInput.className = 'task-location-input';
+      locationInput.value = t.location || '';
+      locationInput.placeholder = 'Location...';
+      editor.appendChild(locationInput);
+
       const trackingRow = document.createElement('div');
       trackingRow.className = 'task-editor-tracking-row';
-      
-      const courierSelect = document.createElement('select');
-      courierSelect.className = 'task-courier-select';
-      courierSelect.title = 'Courier Company';
-      const couriersList = ['Star Track', 'Australia Post', 'Toll', 'TNT', 'DHL', 'FedEx', 'CouriersPlease', 'Aramex'];
-      couriersList.forEach(cOpt => {
+
+      const categorySelect = document.createElement('select');
+      categorySelect.className = 'task-category-select';
+      categorySelect.title = 'Category';
+      CATEGORIES.forEach(cOpt => {
         const opt = document.createElement('option');
         opt.value = cOpt;
         opt.textContent = cOpt;
-        if ((t.courier || 'Star Track') === cOpt) {
+        if ((t.category || 'Personal') === cOpt) {
           opt.selected = true;
         }
-        courierSelect.appendChild(opt);
+        categorySelect.appendChild(opt);
       });
-      
-      const trInput = document.createElement('input');
-      trInput.type = 'text';
-      trInput.className = 'task-tracking-input';
-      trInput.value = t.trackingNo || '';
-      trInput.placeholder = 'Tracking #...';
-      
-      trackingRow.appendChild(courierSelect);
-      trackingRow.appendChild(trInput);
+
+      const refInput = document.createElement('input');
+      refInput.type = 'text';
+      refInput.className = 'task-ref-input';
+      refInput.value = t.ref || '';
+      refInput.placeholder = 'Reference...';
+
+      trackingRow.appendChild(categorySelect);
+      trackingRow.appendChild(refInput);
       editor.appendChild(trackingRow);
+
+      const peopleInput = document.createElement('input');
+      peopleInput.type = 'text';
+      peopleInput.className = 'task-people-input';
+      peopleInput.value = t.people || '';
+      peopleInput.placeholder = 'People involved...';
+      editor.appendChild(peopleInput);
       
       // Inline Editor Tags Selection
       const editTagsContainer = document.createElement('div');
@@ -923,7 +623,7 @@ function renderTasks(){
       saveBtn.textContent = 'Save';
       saveBtn.addEventListener('click', () => {
         const tTags = Array.from(selectedEditTags);
-        saveTaskDetails(i, noteInput.value.trim(), courierSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
+        saveTaskDetails(i, noteInput.value.trim(), locationInput.value.trim(), categorySelect.value, refInput.value.trim(), peopleInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
       });
       
       const cancelBtn = document.createElement('button');
@@ -945,24 +645,26 @@ function renderTasks(){
         if (e.key === 'Enter' && (e.ctrlKey || e.shiftKey)) {
           e.preventDefault();
           const tTags = Array.from(selectedEditTags);
-          saveTaskDetails(i, noteInput.value.trim(), courierSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
+          saveTaskDetails(i, noteInput.value.trim(), locationInput.value.trim(), categorySelect.value, refInput.value.trim(), peopleInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
         } else if (e.key === 'Escape') {
           editingNoteIndex = null;
           renderTasks();
         }
       });
-      
+
       const onKeySingleLine = (e) => {
         if (e.key === 'Enter') {
           const tTags = Array.from(selectedEditTags);
-          saveTaskDetails(i, noteInput.value.trim(), courierSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
+          saveTaskDetails(i, noteInput.value.trim(), locationInput.value.trim(), categorySelect.value, refInput.value.trim(), peopleInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
         } else if (e.key === 'Escape') {
           editingNoteIndex = null;
           renderTasks();
         }
       };
-      courierSelect.addEventListener('keydown', onKeySingleLine);
-      trInput.addEventListener('keydown', onKeySingleLine);
+      locationInput.addEventListener('keydown', onKeySingleLine);
+      categorySelect.addEventListener('keydown', onKeySingleLine);
+      refInput.addEventListener('keydown', onKeySingleLine);
+      peopleInput.addEventListener('keydown', onKeySingleLine);
       targetDateInput.addEventListener('keydown', onKeySingleLine);
       startTimeInput.addEventListener('keydown', onKeySingleLine);
       endTimeInput.addEventListener('keydown', onKeySingleLine);
@@ -1005,82 +707,31 @@ function renderTasks(){
         details.appendChild(tagsContainer);
       }
       
-      // Render tracking info if present
-      if (t.trackingNo) {
+      // Render location/category/ref/people info if present
+      if (t.location || t.ref || t.people) {
         const refsContainer = document.createElement('div');
         refsContainer.className = 'task-refs-container';
 
-        // Declare journey container at this scope so it can be appended after refs
-        let journeyContainer = null;
-        
-        if (t.trackingNo) {
-          const trLink = document.createElement('a');
-          const courierName = t.courier || 'Star Track';
-          const courierConfig = COURIERS[courierName] || COURIERS['Star Track'];
-          trLink.href = courierConfig.url(t.trackingNo.trim());
-          trLink.target = '_blank';
-          trLink.rel = 'noopener noreferrer';
-          trLink.className = 'ref-link ref-tracking';
-          trLink.innerHTML = `🚚 ${courierName}: ${t.trackingNo.trim()}`;
-          refsContainer.appendChild(trLink);
-
-          const copyTemplateBtn = document.createElement('button');
-          copyTemplateBtn.className = 'ref-link ref-copy-template';
-          copyTemplateBtn.title = 'Copy Delivery Template to Clipboard';
-          copyTemplateBtn.innerHTML = `📋 Copy Template`;
-          copyTemplateBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            const trackingLink = t.trackingNo ? courierConfig.url(t.trackingNo.trim()) : 'N/A';
-            const carrier = t.courier || 'Star Track';
-            const trackingNo = t.trackingNo || 'N/A';
-
-            const textToCopy = `Dear Customer,\nGood news! Your order has been packaged.\n\n📦 Delivery Details\nDelivered to: \nCarrier: ${carrier}\nTracking Number: ${trackingNo}\nTracking link: ${trackingLink}`;
-
-            navigator.clipboard.writeText(textToCopy).then(() => {
-              const originalHTML = copyTemplateBtn.innerHTML;
-              copyTemplateBtn.innerHTML = `✅ Copied!`;
-              copyTemplateBtn.style.backgroundColor = 'var(--accent)';
-              copyTemplateBtn.style.color = '#ffffff';
-              setTimeout(() => {
-                copyTemplateBtn.innerHTML = originalHTML;
-                copyTemplateBtn.style.backgroundColor = '';
-                copyTemplateBtn.style.color = '';
-              }, 2000);
-            }).catch(err => {
-              console.error('Failed to copy: ', err);
-            });
-          });
-          refsContainer.appendChild(copyTemplateBtn);
-
-          // Add Track Journey button
-          const trackBtn = document.createElement('button');
-          trackBtn.className = 'ref-link ref-track-journey';
-          trackBtn.title = 'View Real-Time Tracking Progress';
-          trackBtn.innerHTML = `🚚 Track Shipment`;
-
-          // Journey panel element
-          journeyContainer = document.createElement('div');
-          journeyContainer.className = 'tracking-journey-container hidden';
-
-          trackBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isHidden = journeyContainer.classList.toggle('hidden');
-            trackBtn.innerHTML = isHidden ? `🚚 Track Shipment` : `🔼 Hide Tracking`;
-            if (!isHidden) {
-              renderJourneyUI(journeyContainer, t, selectedDate);
-            }
-          });
-
-          refsContainer.appendChild(trackBtn);
+        if (t.location) {
+          const locTag = document.createElement('span');
+          locTag.className = 'ref-link ref-location';
+          locTag.innerHTML = `📍 ${t.location}`;
+          refsContainer.appendChild(locTag);
+        }
+        if (t.ref) {
+          const refTag = document.createElement('span');
+          refTag.className = 'ref-link ref-reference';
+          refTag.innerHTML = `🔖 ${t.ref}`;
+          refsContainer.appendChild(refTag);
+        }
+        if (t.people) {
+          const peopleTag = document.createElement('span');
+          peopleTag.className = 'ref-link ref-people';
+          peopleTag.innerHTML = `👥 ${t.people}`;
+          refsContainer.appendChild(peopleTag);
         }
 
         details.appendChild(refsContainer);
-
-        // Journey panel sits BELOW the refs row so it expands beneath the button
-        if (journeyContainer) {
-          details.appendChild(journeyContainer);
-        }
       }
     }
 
@@ -1298,7 +949,7 @@ function renderTasks(){
     actions.appendChild(editNote);
 
     // Incident & Activity PDF report button
-    if ((t.incidents && t.incidents.length > 0) || (t.subtasks && t.subtasks.length > 0) || t.trackingNo) {
+    if ((t.incidents && t.incidents.length > 0) || (t.subtasks && t.subtasks.length > 0) || t.note || t.location || t.ref || t.people) {
       const pdfBtn = document.createElement('button');
       pdfBtn.className = 'btn-pdf';
       pdfBtn.title = 'Generate Incident & Activity Report PDF';
@@ -1331,28 +982,22 @@ function renderTasks(){
   });
 }
 
-function addTask(text, noteText, courier, trackingNo, startTime, endTime, tags){
+function addTask(text, noteText, location, category, ref, people, startTime, endTime, tags){
   if(!selectedDate) return;
   const arr=tasksFor(selectedDate);
-  const now = new Date();
-  const timestamp = now.toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
   arr.push({
     text: text,
     completed: false,
     note: noteText || '',
-    courier: courier || 'Star Track',
-    trackingNo: trackingNo || '',
+    location: location || '',
+    category: category || 'Personal',
+    ref: ref || '',
+    people: people || '',
     subtasks: [],
     startTime: startTime || '',
     endTime: endTime || '',
     tags: tags || [],
-    incidents: [],
-    trackingAddedAt: trackingNo ? timestamp : ''
+    incidents: []
   });
   setTasksFor(selectedDate, arr);
 
@@ -1360,7 +1005,7 @@ function addTask(text, noteText, courier, trackingNo, startTime, endTime, tags){
   renderCalendar(view);
 }
 
-function saveTaskDetails(index, noteText, courier, trackingNo, startTime, endTime, targetDate, tags) {
+function saveTaskDetails(index, noteText, location, category, ref, people, startTime, endTime, targetDate, tags) {
   const arr = tasksFor(selectedDate);
   const task = arr[index];
   const originalDate = selectedDate;
@@ -1375,32 +1020,16 @@ function saveTaskDetails(index, noteText, courier, trackingNo, startTime, endTim
       completed: true,
       isReport: true,
       note: '',
-      courier: 'Star Track',
-      trackingNo: '',
       tags: [],
       subtasks: []
     });
   }
 
-  const now = new Date();
-  const timestamp = now.toLocaleString([], {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-
-  const oldTrackingNo = task.trackingNo || '';
-  const newTrackingNo = trackingNo || '';
-  if (newTrackingNo !== oldTrackingNo) {
-    task.trackingAddedAt = newTrackingNo ? timestamp : '';
-  } else if (newTrackingNo && !task.trackingAddedAt) {
-    task.trackingAddedAt = timestamp;
-  }
-
   task.note = noteText;
-  task.courier = courier || 'Star Track';
-  task.trackingNo = trackingNo;
+  task.location = location || '';
+  task.category = category || 'Personal';
+  task.ref = ref || '';
+  task.people = people || '';
   task.startTime = startTime || '';
   task.endTime = endTime || '';
   task.tags = tags || [];
@@ -1554,7 +1183,10 @@ function openIncidentReport(taskIndex) {
     day: 'numeric'
   });
 
-  const courierVal = task.trackingNo ? `${task.courier || 'Star Track'} (${task.trackingNo})` : 'N/A';
+  const categoryVal = task.category || 'N/A';
+  const locationVal = task.location || 'N/A';
+  const refVal = task.ref || 'N/A';
+  const peopleVal = task.people || 'N/A';
   const tagsVal = (task.tags && task.tags.length > 0) ? task.tags.join(', ') : 'N/A';
 
 
@@ -1584,22 +1216,6 @@ function openIncidentReport(taskIndex) {
         status: inc.solved ? 'SOLVED' : 'PENDING',
         badgeClass: inc.solved ? 'status-solved' : 'status-pending'
       });
-    });
-  }
-
-  if (task.trackingNo) {
-    const journey = getTrackingJourney(task, selectedDate);
-    journey.forEach(ev => {
-      if (ev.unlocked) {
-        events.push({
-          type: 'Tracking',
-          text: ev.details,
-          timestamp: ev.formattedTime,
-          sortTime: ev.timestamp.getTime(),
-          status: ev.stage === 'delivered' ? 'DELIVERED' : 'DISPATCHED',
-          badgeClass: ev.stage === 'delivered' ? 'status-solved' : 'status-dispatched'
-        });
-      }
     });
   }
 
@@ -1664,7 +1280,16 @@ function openIncidentReport(taskIndex) {
           <p><strong>Tags:</strong> ${tagsVal}</p>
         </div>
         <div class="report-grid-item">
-          <p><strong>Courier details:</strong> ${courierVal}</p>
+          <p><strong>Category:</strong> ${categoryVal}</p>
+        </div>
+        <div class="report-grid-item">
+          <p><strong>Location:</strong> ${locationVal}</p>
+        </div>
+        <div class="report-grid-item">
+          <p><strong>Reference:</strong> ${refVal}</p>
+        </div>
+        <div class="report-grid-item">
+          <p><strong>People Involved:</strong> ${peopleVal}</p>
         </div>
       </div>
     </div>
@@ -1712,8 +1337,6 @@ function moveToNext(index){
       completed: true,
       isReport: true,
       note: '',
-      courier: 'Star Track',
-      trackingNo: '',
       tags: [],
       subtasks: []
     });
@@ -1738,17 +1361,21 @@ taskForm.addEventListener('submit', e=>{
   const st=taskStartTimeInput.value;
   const et=taskEndTimeInput.value;
   const n=taskNoteInput.value.trim();
-  const tc=taskCourierSelect.value;
-  const tr=taskTrackingInput.value.trim();
+  const location=taskLocationInput.value.trim();
+  const category=taskCategorySelect.value;
+  const ref=taskRefInput.value.trim();
+  const people=taskPeopleInput.value.trim();
   const tagsList = Array.from(selectedAddTags);
   if(!v) return;
-  addTask(v, n, tc, tr, st, et, tagsList);
+  addTask(v, n, location, category, ref, people, st, et, tagsList);
   taskInput.value='';
   taskStartTimeInput.value='';
   taskEndTimeInput.value='';
   taskNoteInput.value='';
-  taskCourierSelect.value='Star Track';
-  taskTrackingInput.value='';
+  taskLocationInput.value='';
+  taskCategorySelect.value='Personal';
+  taskRefInput.value='';
+  taskPeopleInput.value='';
   selectedAddTags.clear();
   renderAddTags();
 });
