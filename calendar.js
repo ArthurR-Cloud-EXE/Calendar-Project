@@ -1265,7 +1265,7 @@ function openIncidentReport(taskIndex) {
     <div class="report-header">
       <div>
         <h2>ACTIVITY REPORT</h2>
-        <p style="font-size: 14px; font-weight: 500; margin-top: 4px; color: #475569;">WorkFlow Calendar</p>
+        <p style="font-size: 14px; font-weight: 500; margin-top: 4px; color: #475569;">Work-Flow-Calendar</p>
       </div>
       <div class="report-header-meta">
         <p><strong>Report Date:</strong> ${reportDateStr}</p>
