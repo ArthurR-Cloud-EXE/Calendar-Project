@@ -12,32 +12,25 @@ const taskInput = document.getElementById('taskInput');
 const taskStartTimeInput = document.getElementById('taskStartTime');
 const taskEndTimeInput = document.getElementById('taskEndTime');
 const taskNoteInput = document.getElementById('taskNoteInput');
-const taskRef1Input = document.getElementById('taskRef1Input');
-const taskRef2Input = document.getElementById('taskRef2Input');
 const taskCourierSelect = document.getElementById('taskCourierSelect');
-const taskClientSelect = document.getElementById('taskClientSelect');
 const taskTrackingInput = document.getElementById('taskTrackingInput');
 const closePanel = document.getElementById('closePanel');
 
 const taskTagsContainer = document.getElementById('taskTagsContainer');
-const issuePeopleGroup = document.getElementById('issuePeopleGroup');
-const taskIssuePeople = document.getElementById('taskIssuePeople');
 
-const ALL_TAGS = ['Sales Order', 'Purchase Order', 'General Task', 'Store Refresh', 'New Store', 'Replacement', 'URGENT Task', 'Implemented', 'Issue Raised', 'E-Waste', 'E-Waste Processing', 'Training'];
+const ALL_TAGS = ['Personal', 'Birthday', 'Appointment', 'Reminder', 'Shopping', 'Bills', 'Health', 'Travel', 'Social', 'URGENT Task'];
 
 const TAG_COLORS = {
-  'Sales Order': { bg: '#e0f2fe', fg: '#0369a1', darkBg: 'rgba(14, 165, 233, 0.15)', darkFg: '#7dd3fc' },
-  'Purchase Order': { bg: '#e0e7ff', fg: '#4338ca', darkBg: 'rgba(99, 102, 241, 0.15)', darkFg: '#a5b4fc' },
-  'General Task': { bg: '#f1f5f9', fg: '#475569', darkBg: 'rgba(148, 163, 184, 0.15)', darkFg: '#cbd5e1' },
-  'Store Refresh': { bg: '#dcfce7', fg: '#15803d', darkBg: 'rgba(34, 197, 94, 0.15)', darkFg: '#86efac' },
-  'New Store': { bg: '#f3e8ff', fg: '#6b21a8', darkBg: 'rgba(168, 85, 247, 0.15)', darkFg: '#d8b4fe' },
-  'Replacement': { bg: '#ccfbf1', fg: '#0f766e', darkBg: 'rgba(20, 184, 166, 0.15)', darkFg: '#99f6e4' },
-  'URGENT Task': { bg: '#fee2e2', fg: '#b91c1c', darkBg: 'rgba(239, 68, 68, 0.2)', darkFg: '#fca5a5', border: '1px solid #ef4444' },
-  'Implemented': { bg: '#ecfdf5', fg: '#047857', darkBg: 'rgba(16, 185, 129, 0.15)', darkFg: '#6ee7b7' },
-  'Issue Raised': { bg: '#fef3c7', fg: '#b45309', darkBg: 'rgba(245, 158, 11, 0.15)', darkFg: '#fde047' },
-  'E-Waste': { bg: '#fafaf9', fg: '#57534e', darkBg: 'rgba(120, 113, 108, 0.15)', darkFg: '#d6d3d1', border: '1px solid #d6d3d1' },
-  'E-Waste Processing': { bg: '#ffedd5', fg: '#ea580c', darkBg: 'rgba(234, 88, 12, 0.15)', darkFg: '#ffedd5', border: '1px solid #ea580c' },
-  'Training': { bg: '#fae8ff', fg: '#a21caf', darkBg: 'rgba(217, 70, 239, 0.15)', darkFg: '#f5d0fe', border: '1px solid #d946ef' }
+  'Personal': { bg: '#e0f2fe', fg: '#0369a1', darkBg: 'rgba(14, 165, 233, 0.15)', darkFg: '#7dd3fc' },
+  'Birthday': { bg: '#fce7f3', fg: '#be185d', darkBg: 'rgba(236, 72, 153, 0.15)', darkFg: '#f9a8d4' },
+  'Appointment': { bg: '#e0e7ff', fg: '#4338ca', darkBg: 'rgba(99, 102, 241, 0.15)', darkFg: '#a5b4fc' },
+  'Reminder': { bg: '#f1f5f9', fg: '#475569', darkBg: 'rgba(148, 163, 184, 0.15)', darkFg: '#cbd5e1' },
+  'Shopping': { bg: '#dcfce7', fg: '#15803d', darkBg: 'rgba(34, 197, 94, 0.15)', darkFg: '#86efac' },
+  'Bills': { bg: '#ffedd5', fg: '#ea580c', darkBg: 'rgba(234, 88, 12, 0.15)', darkFg: '#fed7aa', border: '1px solid #ea580c' },
+  'Health': { bg: '#ccfbf1', fg: '#0f766e', darkBg: 'rgba(20, 184, 166, 0.15)', darkFg: '#99f6e4' },
+  'Travel': { bg: '#f3e8ff', fg: '#6b21a8', darkBg: 'rgba(168, 85, 247, 0.15)', darkFg: '#d8b4fe' },
+  'Social': { bg: '#fae8ff', fg: '#a21caf', darkBg: 'rgba(217, 70, 239, 0.15)', darkFg: '#f5d0fe', border: '1px solid #d946ef' },
+  'URGENT Task': { bg: '#fee2e2', fg: '#b91c1c', darkBg: 'rgba(239, 68, 68, 0.2)', darkFg: '#fca5a5', border: '1px solid #ef4444' }
 };
 
 let selectedAddTags = new Set();
@@ -60,14 +53,6 @@ function renderAddTags() {
         selectedAddTags.add(tag);
       }
       renderAddTags();
-      
-      // Show/hide Issue People input
-      if (selectedAddTags.has('Issue Raised')) {
-        issuePeopleGroup.classList.remove('hidden');
-      } else {
-        issuePeopleGroup.classList.add('hidden');
-        taskIssuePeople.value = ''; // Reset when hidden
-      }
     });
     taskTagsContainer.appendChild(btn);
   });
@@ -125,33 +110,6 @@ function getTasksMap(){
   return JSON.parse(localStorage.getItem('tasksMap')||'{}');
 }
 function saveTasksMap(m){ localStorage.setItem('tasksMap', JSON.stringify(m)); }
-
-function migrateEWasteTasks() {
-  const m = getTasksMap();
-  let modified = false;
-  for (const dateStr in m) {
-    if (Array.isArray(m[dateStr])) {
-      m[dateStr].forEach(item => {
-        if (item && typeof item === 'object' && item.text && item.text.startsWith('E-Waste Processing:')) {
-          if (!item.tags) item.tags = [];
-          if (!item.tags.includes('E-Waste Processing')) {
-            item.tags.push('E-Waste Processing');
-            modified = true;
-          }
-          const genIdx = item.tags.indexOf('General Task');
-          if (genIdx !== -1) {
-            item.tags.splice(genIdx, 1);
-            modified = true;
-          }
-        }
-      });
-    }
-  }
-  if (modified) {
-    saveTasksMap(m);
-  }
-}
-migrateEWasteTasks();
 
 function timeToMinutes(timeStr) {
   if (!timeStr) return null;
@@ -532,14 +490,11 @@ function tasksFor(dateStr){
   // Normalize string-only tasks to objects for backward compatibility
   const normalized = raw.map(item => {
     if (typeof item === 'string') {
-      return { text: item, completed: false, note: '', ref1: '', ref2: '', courier: 'Star Track', client: '', trackingNo: '', subtasks: [], startTime: '', endTime: '', tags: [], issuePeople: [], isReport: false, incidents: [] };
+      return { text: item, completed: false, note: '', courier: 'Star Track', trackingNo: '', subtasks: [], startTime: '', endTime: '', tags: [], isReport: false, incidents: [] };
     }
     if (item && typeof item === 'object') {
       if (!('note' in item)) item.note = '';
-      if (!('ref1' in item)) item.ref1 = '';
-      if (!('ref2' in item)) item.ref2 = '';
       if (!('courier' in item)) item.courier = 'Star Track';
-      if (!('client' in item)) item.client = '';
       if (!('trackingNo' in item)) item.trackingNo = '';
       if (!('subtasks' in item)) {
         item.subtasks = [];
@@ -553,16 +508,6 @@ function tasksFor(dateStr){
       if (!('startTime' in item)) item.startTime = '';
       if (!('endTime' in item)) item.endTime = '';
       if (!('tags' in item)) item.tags = [];
-      if (item.text && item.text.startsWith('E-Waste Processing:')) {
-        if (!item.tags.includes('E-Waste Processing')) {
-          item.tags.push('E-Waste Processing');
-        }
-        const genIdx = item.tags.indexOf('General Task');
-        if (genIdx !== -1) {
-          item.tags.splice(genIdx, 1);
-        }
-      }
-      if (!('issuePeople' in item)) item.issuePeople = [];
       if (!('isReport' in item)) item.isReport = false;
       if (!('incidents' in item)) item.incidents = [];
     }
@@ -618,12 +563,6 @@ function isoDate(d){
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
-}
-
-function shiftDateStr(dateStr, days) {
-  const d = new Date(dateStr + 'T00:00:00');
-  d.setDate(d.getDate() + days);
-  return isoDate(d);
 }
 
 function renderCalendar(date){
@@ -710,15 +649,14 @@ function renderCalendar(date){
     title.textContent=day;
     cellHeader.appendChild(title);
     
-    // Check for urgent, e-waste, and clashing tasks count
+    // Check for urgent and clashing tasks count
     const urgentCount = dayTasks.filter(t => !t.isReport && t.tags && t.tags.includes('URGENT Task')).length;
-    const ewasteCount = dayTasks.filter(t => !t.isReport && t.tags && t.tags.includes('E-Waste Processing')).length;
     const clashingIndices = getClashingTaskIndices(dayTasks);
     const clashCount = clashingIndices.size;
-    if (urgentCount > 0 || ewasteCount > 0 || clashCount > 0) {
+    if (urgentCount > 0 || clashCount > 0) {
       const group = document.createElement('div');
       group.className = 'indicators-group';
-      
+
       if (urgentCount > 0) {
         const flag = document.createElement('span');
         flag.className = 'urgent-flag';
@@ -726,15 +664,7 @@ function renderCalendar(date){
         flag.title = `${urgentCount} Urgent Task(s)`;
         group.appendChild(flag);
       }
-      
-      if (ewasteCount > 0) {
-        const bin = document.createElement('span');
-        bin.className = 'ewaste-badge';
-        bin.innerHTML = `🗑️ <span class="ewaste-count-badge">${ewasteCount}</span>`;
-        bin.title = `${ewasteCount} E-Waste Processing Task(s)`;
-        group.appendChild(bin);
-      }
-      
+
       if (clashCount > 0) {
         const clashBadge = document.createElement('span');
         clashBadge.className = 'clash-badge';
@@ -797,27 +727,6 @@ function formatTime(timeStr) {
   return `${hour}:${min} ${ampm}`;
 }
 
-function formatReference(ref) {
-  if (!ref) return null;
-  const cleanRef = ref.trim();
-  if (/^(https?:\/\/|www\.)[^\s]+$/i.test(cleanRef)) {
-    const href = cleanRef.startsWith('http') ? cleanRef : `https://${cleanRef}`;
-    const label = cleanRef.replace(/^(https?:\/\/)?(www\.)?/, '').slice(0, 20) + (cleanRef.length > 20 ? '...' : '');
-    const a = document.createElement('a');
-    a.href = href;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.className = 'ref-link';
-    a.innerHTML = `🔗 ${label}`;
-    return a;
-  } else {
-    const span = document.createElement('span');
-    span.className = 'ref-badge';
-    span.textContent = `📌 ${cleanRef}`;
-    return span;
-  }
-}
-
 function renderTasks(){
   tasksList.innerHTML='';
   if(!selectedDate) {
@@ -874,9 +783,8 @@ function renderTasks(){
 
     const r=document.createElement('div');
     const isUrgent = t.tags && t.tags.includes('URGENT Task');
-    const isEWasteProc = t.tags && t.tags.includes('E-Waste Processing');
     const isClash = clashingIndices.has(i);
-    r.className='task' + (t.completed ? ' completed' : '') + (isUrgent ? ' urgent' : '') + (isEWasteProc ? ' e-waste-proc' : '') + (isClash ? ' clash' : '');
+    r.className='task' + (t.completed ? ' completed' : '') + (isUrgent ? ' urgent' : '') + (isClash ? ' clash' : '');
     
     // Checkbox toggle
     const chkWrapper = document.createElement('div');
@@ -947,44 +855,12 @@ function renderTasks(){
       trackingRow.appendChild(trInput);
       editor.appendChild(trackingRow);
       
-      const clientSelect = document.createElement('select');
-      clientSelect.className = 'task-client-select';
-      clientSelect.title = 'Client Company';
-      
-      const clientOpts = ['', 'BSO Client', 'TFX Client', 'Reximo Client', 'Future Shop Client'];
-      clientOpts.forEach(cOpt => {
-        const opt = document.createElement('option');
-        opt.value = cOpt;
-        opt.textContent = cOpt || 'No Client';
-        if ((t.client || '') === cOpt) {
-          opt.selected = true;
-        }
-        clientSelect.appendChild(opt);
-      });
-      editor.appendChild(clientSelect);
-      
       // Inline Editor Tags Selection
       const editTagsContainer = document.createElement('div');
       editTagsContainer.className = 'tags-selection-container edit-mode';
-      
+
       let selectedEditTags = new Set(t.tags || []);
-      
-      const editPeopleGroup = document.createElement('div');
-      editPeopleGroup.className = 'form-group edit-mode' + (selectedEditTags.has('Issue Raised') ? '' : ' hidden');
-      
-      const editPeopleLabel = document.createElement('label');
-      editPeopleLabel.textContent = 'Issue - Associated People (one per line)';
-      editPeopleLabel.className = 'field-label';
-      
-      const editPeopleInput = document.createElement('textarea');
-      editPeopleInput.className = 'task-issue-people-input';
-      editPeopleInput.value = (t.issuePeople || []).join('\n');
-      editPeopleInput.placeholder = 'Enter names...';
-      editPeopleInput.rows = 3;
-      
-      editPeopleGroup.appendChild(editPeopleLabel);
-      editPeopleGroup.appendChild(editPeopleInput);
-      
+
       function renderEditTags() {
         editTagsContainer.innerHTML = '';
         ALL_TAGS.forEach(tag => {
@@ -1002,37 +878,13 @@ function renderTasks(){
               selectedEditTags.add(tag);
             }
             renderEditTags();
-            if (selectedEditTags.has('Issue Raised')) {
-              editPeopleGroup.classList.remove('hidden');
-            } else {
-              editPeopleGroup.classList.add('hidden');
-              editPeopleInput.value = '';
-            }
           });
           editTagsContainer.appendChild(btn);
         });
       }
       renderEditTags();
-      
+
       editor.appendChild(editTagsContainer);
-      editor.appendChild(editPeopleGroup);
-      
-      const refsEditor = document.createElement('div');
-      refsEditor.className = 'task-editor-refs';
-      
-      const r1Input = document.createElement('input');
-      r1Input.type = 'text';
-      r1Input.placeholder = 'Ref 1 (Sales Order or Person)';
-      r1Input.value = t.ref1 || '';
-      
-      const r2Input = document.createElement('input');
-      r2Input.type = 'text';
-      r2Input.placeholder = 'Ref 2 (Ticket Number/Job Number)';
-      r2Input.value = t.ref2 || '';
-      
-      refsEditor.appendChild(r1Input);
-      refsEditor.appendChild(r2Input);
-      editor.appendChild(refsEditor);
 
       const timeDateEditor = document.createElement('div');
       timeDateEditor.className = 'task-editor-time-date';
@@ -1071,8 +923,7 @@ function renderTasks(){
       saveBtn.textContent = 'Save';
       saveBtn.addEventListener('click', () => {
         const tTags = Array.from(selectedEditTags);
-        const tPeople = editPeopleInput.value.split('\n').map(x => x.trim()).filter(Boolean);
-        saveTaskDetails(i, noteInput.value.trim(), r1Input.value.trim(), r2Input.value.trim(), courierSelect.value, clientSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags, tPeople);
+        saveTaskDetails(i, noteInput.value.trim(), courierSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
       });
       
       const cancelBtn = document.createElement('button');
@@ -1094,8 +945,7 @@ function renderTasks(){
         if (e.key === 'Enter' && (e.ctrlKey || e.shiftKey)) {
           e.preventDefault();
           const tTags = Array.from(selectedEditTags);
-          const tPeople = editPeopleInput.value.split('\n').map(x => x.trim()).filter(Boolean);
-          saveTaskDetails(i, noteInput.value.trim(), r1Input.value.trim(), r2Input.value.trim(), courierSelect.value, clientSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags, tPeople);
+          saveTaskDetails(i, noteInput.value.trim(), courierSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
         } else if (e.key === 'Escape') {
           editingNoteIndex = null;
           renderTasks();
@@ -1105,18 +955,14 @@ function renderTasks(){
       const onKeySingleLine = (e) => {
         if (e.key === 'Enter') {
           const tTags = Array.from(selectedEditTags);
-          const tPeople = editPeopleInput.value.split('\n').map(x => x.trim()).filter(Boolean);
-          saveTaskDetails(i, noteInput.value.trim(), r1Input.value.trim(), r2Input.value.trim(), courierSelect.value, clientSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags, tPeople);
+          saveTaskDetails(i, noteInput.value.trim(), courierSelect.value, trInput.value.trim(), startTimeInput.value, endTimeInput.value, targetDateInput.value, tTags);
         } else if (e.key === 'Escape') {
           editingNoteIndex = null;
           renderTasks();
         }
       };
       courierSelect.addEventListener('keydown', onKeySingleLine);
-      clientSelect.addEventListener('keydown', onKeySingleLine);
       trInput.addEventListener('keydown', onKeySingleLine);
-      r1Input.addEventListener('keydown', onKeySingleLine);
-      r2Input.addEventListener('keydown', onKeySingleLine);
       targetDateInput.addEventListener('keydown', onKeySingleLine);
       startTimeInput.addEventListener('keydown', onKeySingleLine);
       endTimeInput.addEventListener('keydown', onKeySingleLine);
@@ -1159,18 +1005,11 @@ function renderTasks(){
         details.appendChild(tagsContainer);
       }
       
-      // Render references & tracking if present
-      if (t.ref1 || t.ref2 || t.trackingNo || t.client) {
+      // Render tracking info if present
+      if (t.trackingNo) {
         const refsContainer = document.createElement('div');
         refsContainer.className = 'task-refs-container';
-        
-        if (t.client) {
-          const clientBadge = document.createElement('span');
-          clientBadge.className = 'ref-badge ref-client';
-          clientBadge.textContent = `🏢 ${t.client}`;
-          refsContainer.appendChild(clientBadge);
-        }
-        
+
         // Declare journey container at this scope so it can be appended after refs
         let journeyContainer = null;
         
@@ -1236,47 +1075,12 @@ function renderTasks(){
           refsContainer.appendChild(trackBtn);
         }
 
-        [t.ref1, t.ref2].forEach(ref => {
-          const el = formatReference(ref);
-          if (el) {
-            if (el.tagName === 'SPAN') {
-              el.style.cursor = 'pointer';
-              el.title = 'Click to edit';
-              el.addEventListener('click', () => {
-                editingNoteIndex = i;
-                renderTasks();
-              });
-            }
-            refsContainer.appendChild(el);
-          }
-        });
         details.appendChild(refsContainer);
 
         // Journey panel sits BELOW the refs row so it expands beneath the button
         if (journeyContainer) {
           details.appendChild(journeyContainer);
         }
-      }
-      
-      // Render issue people list if Issue Raised is present and people list is non-empty
-      if (t.tags && t.tags.includes('Issue Raised') && t.issuePeople && t.issuePeople.length > 0) {
-        const issueDiv = document.createElement('div');
-        issueDiv.className = 'issue-people-section';
-        
-        const titleSpan = document.createElement('span');
-        titleSpan.className = 'issue-people-title';
-        titleSpan.textContent = '⚠️ Issue Raised - Associated People:';
-        issueDiv.appendChild(titleSpan);
-        
-        const peopleList = document.createElement('ul');
-        peopleList.className = 'issue-people-list';
-        t.issuePeople.forEach(person => {
-          const li = document.createElement('li');
-          li.textContent = person;
-          peopleList.appendChild(li);
-        });
-        issueDiv.appendChild(peopleList);
-        details.appendChild(issueDiv);
       }
     }
 
@@ -1485,7 +1289,7 @@ function renderTasks(){
     // Edit/Add Note button
     const editNote=document.createElement('button');
     editNote.className = 'btn-note';
-    editNote.title = (t.note || t.ref1 || t.ref2) ? 'Edit details' : 'Add details';
+    editNote.title = t.note ? 'Edit details' : 'Add details';
     editNote.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
     editNote.addEventListener('click', () => {
       editingNoteIndex = i;
@@ -1527,7 +1331,7 @@ function renderTasks(){
   });
 }
 
-function addTask(text, noteText, ref1, ref2, courier, client, trackingNo, startTime, endTime, tags, issuePeople){
+function addTask(text, noteText, courier, trackingNo, startTime, endTime, tags){
   if(!selectedDate) return;
   const arr=tasksFor(selectedDate);
   const now = new Date();
@@ -1537,64 +1341,33 @@ function addTask(text, noteText, ref1, ref2, courier, client, trackingNo, startT
     hour: '2-digit',
     minute: '2-digit'
   });
-  arr.push({ 
-    text: text, 
-    completed: false, 
+  arr.push({
+    text: text,
+    completed: false,
     note: noteText || '',
-    ref1: ref1 || '',
-    ref2: ref2 || '',
     courier: courier || 'Star Track',
-    client: client || '',
     trackingNo: trackingNo || '',
     subtasks: [],
     startTime: startTime || '',
     endTime: endTime || '',
     tags: tags || [],
-    issuePeople: issuePeople || [],
     incidents: [],
     trackingAddedAt: trackingNo ? timestamp : ''
   });
   setTasksFor(selectedDate, arr);
 
-  const isEWaste = tags && tags.includes('E-Waste');
-  if (isEWaste) {
-    const processingDate = shiftDateStr(selectedDate, 14);
-    const targetArr = tasksFor(processingDate);
-    targetArr.push({
-      text: `E-Waste Processing: ${text}`,
-      completed: false,
-      note: noteText || '',
-      ref1: ref1 || '',
-      ref2: ref2 || '',
-      courier: courier || 'Star Track',
-      client: client || '',
-      trackingNo: trackingNo || '',
-      subtasks: [],
-      startTime: '',
-      endTime: '',
-      tags: ['E-Waste Processing'],
-      issuePeople: [],
-      incidents: [],
-      trackingAddedAt: trackingNo ? timestamp : ''
-    });
-    setTasksFor(processingDate, targetArr);
-  }
-
   renderTasks();
   renderCalendar(view);
 }
 
-function saveTaskDetails(index, noteText, ref1, ref2, courier, client, trackingNo, startTime, endTime, targetDate, tags, issuePeople) {
+function saveTaskDetails(index, noteText, courier, trackingNo, startTime, endTime, targetDate, tags) {
   const arr = tasksFor(selectedDate);
   const task = arr[index];
   const originalDate = selectedDate;
-  const oldText = task.text;
-  const hadEWaste = task.tags && task.tags.includes('E-Waste');
-  const hasEWaste = tags && tags.includes('E-Waste');
   const isMoving = targetDate && targetDate !== selectedDate;
-  
+
   const isCurrentlyUrgent = task.tags && task.tags.includes('URGENT Task');
-  
+
   if (isCurrentlyUrgent && isMoving) {
     const reason = prompt(`Enter reason for moving urgent task "${task.text}" to ${targetDate}:`) || 'Conflict/Issue';
     arr.push({
@@ -1602,23 +1375,12 @@ function saveTaskDetails(index, noteText, ref1, ref2, courier, client, trackingN
       completed: true,
       isReport: true,
       note: '',
-      ref1: '',
-      ref2: '',
       courier: 'Star Track',
-      client: '',
       trackingNo: '',
       tags: [],
-      subtasks: [],
-      startTime: '',
-      endTime: '',
-      issuePeople: []
+      subtasks: []
     });
   }
-
-  // Pre-fetch E-waste processing arrays/indexes
-  const oldProcessingDate = shiftDateStr(originalDate, 14);
-  const oldProcessingArr = tasksFor(oldProcessingDate);
-  const oldProcessingIndex = oldProcessingArr.findIndex(t => t.text === `E-Waste Processing: ${oldText}`);
 
   const now = new Date();
   const timestamp = now.toLocaleString([], {
@@ -1637,111 +1399,23 @@ function saveTaskDetails(index, noteText, ref1, ref2, courier, client, trackingN
   }
 
   task.note = noteText;
-  task.ref1 = ref1;
-  task.ref2 = ref2;
   task.courier = courier || 'Star Track';
-  task.client = client || '';
   task.trackingNo = trackingNo;
   task.startTime = startTime || '';
   task.endTime = endTime || '';
   task.tags = tags || [];
-  task.issuePeople = issuePeople || [];
 
   if (isMoving) {
     // Remove from current date
     arr.splice(index, 1);
     setTasksFor(originalDate, arr);
-    
+
     // Add to target date
     const targetArr = tasksFor(targetDate);
     targetArr.push(task);
     setTasksFor(targetDate, targetArr);
-
-    // E-Waste Reschedule logic
-    if (hadEWaste && oldProcessingIndex !== -1) {
-      const processingTask = oldProcessingArr.splice(oldProcessingIndex, 1)[0];
-      setTasksFor(oldProcessingDate, oldProcessingArr);
-
-      if (hasEWaste) {
-        // Update details and move to new target date + 14 days
-        processingTask.note = noteText;
-        processingTask.ref1 = ref1;
-        processingTask.ref2 = ref2;
-        processingTask.courier = courier || 'Star Track';
-        processingTask.client = client || '';
-        processingTask.trackingNo = trackingNo;
-        processingTask.trackingAddedAt = task.trackingAddedAt;
-
-        const newProcessingDate = shiftDateStr(targetDate, 14);
-        const targetProcessingArr = tasksFor(newProcessingDate);
-        targetProcessingArr.push(processingTask);
-        setTasksFor(newProcessingDate, targetProcessingArr);
-      }
-    } else if (hasEWaste) {
-      // Create new processing task 14 days after target date
-      const newProcessingDate = shiftDateStr(targetDate, 14);
-      const targetProcessingArr = tasksFor(newProcessingDate);
-      targetProcessingArr.push({
-        text: `E-Waste Processing: ${task.text}`,
-        completed: false,
-        note: noteText || '',
-        ref1: ref1 || '',
-        ref2: ref2 || '',
-        courier: courier || 'Star Track',
-        client: client || '',
-        trackingNo: trackingNo || '',
-        subtasks: [],
-        startTime: '',
-        endTime: '',
-        tags: ['E-Waste Processing'],
-        issuePeople: [],
-        incidents: [],
-        trackingAddedAt: task.trackingAddedAt || ''
-      });
-      setTasksFor(newProcessingDate, targetProcessingArr);
-    }
   } else {
     setTasksFor(originalDate, arr);
-
-    // E-Waste Sync logic (not moving date)
-    if (hadEWaste && oldProcessingIndex !== -1) {
-      if (hasEWaste) {
-        // Update details inline
-        const processingTask = oldProcessingArr[oldProcessingIndex];
-        processingTask.note = noteText;
-        processingTask.ref1 = ref1;
-        processingTask.ref2 = ref2;
-        processingTask.courier = courier || 'Star Track';
-        processingTask.client = client || '';
-        processingTask.trackingNo = trackingNo;
-        processingTask.trackingAddedAt = task.trackingAddedAt;
-        setTasksFor(oldProcessingDate, oldProcessingArr);
-      } else {
-        // Delete E-Waste processing task
-        oldProcessingArr.splice(oldProcessingIndex, 1);
-        setTasksFor(oldProcessingDate, oldProcessingArr);
-      }
-    } else if (hasEWaste) {
-      // Create new processing task on oldProcessingDate
-      oldProcessingArr.push({
-        text: `E-Waste Processing: ${task.text}`,
-        completed: false,
-        note: noteText || '',
-        ref1: ref1 || '',
-        ref2: ref2 || '',
-        courier: courier || 'Star Track',
-        client: client || '',
-        trackingNo: trackingNo || '',
-        subtasks: [],
-        startTime: '',
-        endTime: '',
-        tags: ['E-Waste Processing'],
-        issuePeople: [],
-        incidents: [],
-        trackingAddedAt: task.trackingAddedAt || ''
-      });
-      setTasksFor(oldProcessingDate, oldProcessingArr);
-    }
   }
   editingNoteIndex = null;
   renderTasks();
@@ -1749,17 +1423,6 @@ function saveTaskDetails(index, noteText, ref1, ref2, courier, client, trackingN
 
 function deleteTask(index){
   const arr=tasksFor(selectedDate);
-  const task = arr[index];
-  const hasEWaste = task.tags && task.tags.includes('E-Waste');
-  if (hasEWaste) {
-    const procDate = shiftDateStr(selectedDate, 14);
-    const procArr = tasksFor(procDate);
-    const procIdx = procArr.findIndex(t => t.text === `E-Waste Processing: ${task.text}`);
-    if (procIdx !== -1) {
-      procArr.splice(procIdx, 1);
-      setTasksFor(procDate, procArr);
-    }
-  }
   arr.splice(index,1);
   setTasksFor(selectedDate, arr);
   renderTasks();
@@ -1891,10 +1554,8 @@ function openIncidentReport(taskIndex) {
     day: 'numeric'
   });
 
-  const clientVal = task.client || 'N/A';
   const courierVal = task.trackingNo ? `${task.courier || 'Star Track'} (${task.trackingNo})` : 'N/A';
-  const peopleVal = (task.issuePeople && task.issuePeople.length > 0) ? task.issuePeople.join(', ') : 'N/A';
-
+  const tagsVal = (task.tags && task.tags.length > 0) ? task.tags.join(', ') : 'N/A';
 
 
   // Combine subtasks, incidents, and tracking events into a single list
@@ -1987,8 +1648,8 @@ function openIncidentReport(taskIndex) {
   printReportArea.innerHTML = `
     <div class="report-header">
       <div>
-        <h2>INCIDENT & ACTIVITY REPORT</h2>
-        <p style="font-size: 14px; font-weight: 500; margin-top: 4px; color: #475569;">WorkFlow Calendar Management System</p>
+        <h2>ACTIVITY REPORT</h2>
+        <p style="font-size: 14px; font-weight: 500; margin-top: 4px; color: #475569;">WorkFlow Calendar</p>
       </div>
       <div class="report-header-meta">
         <p><strong>Report Date:</strong> ${reportDateStr}</p>
@@ -2000,12 +1661,9 @@ function openIncidentReport(taskIndex) {
       <div class="report-section-title">Task Metadata</div>
       <div class="report-grid">
         <div class="report-grid-item">
-          <p><strong>Client:</strong> ${clientVal}</p>
-          <p><strong>Associated People:</strong> ${peopleVal}</p>
+          <p><strong>Tags:</strong> ${tagsVal}</p>
         </div>
         <div class="report-grid-item">
-          <p><strong>Ref 1 (Sales/Person):</strong> ${task.ref1 || 'N/A'}</p>
-          <p><strong>Ref 2 (Ticket/Job #):</strong> ${task.ref2 || 'N/A'}</p>
           <p><strong>Courier details:</strong> ${courierVal}</p>
         </div>
       </div>
@@ -2030,7 +1688,7 @@ function openIncidentReport(taskIndex) {
         <div class="report-signature-line">Reported By (Print Name & Sign)</div>
       </div>
       <div>
-        <div class="report-signature-line">Authorized Approver / Manager</div>
+        <div class="report-signature-line">Date</div>
       </div>
     </div>
   `;
@@ -2054,46 +1712,20 @@ function moveToNext(index){
       completed: true,
       isReport: true,
       note: '',
-      ref1: '',
-      ref2: '',
       courier: 'Star Track',
-      client: '',
       trackingNo: '',
       tags: [],
-      subtasks: [],
-      startTime: '',
-      endTime: '',
-      issuePeople: []
+      subtasks: []
     });
   }
-  
+
   const removedItem = curr.splice(index, 1)[0];
 
-  // E-Waste Reschedule logic
-  const isEWaste = removedItem.tags && removedItem.tags.includes('E-Waste');
-  let processingItem = null;
-  if (isEWaste) {
-    const oldProcessingDate = shiftDateStr(originalDate, 14);
-    const oldProcessingArr = tasksFor(oldProcessingDate);
-    const procIdx = oldProcessingArr.findIndex(t => t.text === `E-Waste Processing: ${removedItem.text}`);
-    if (procIdx !== -1) {
-      processingItem = oldProcessingArr.splice(procIdx, 1)[0];
-      setTasksFor(oldProcessingDate, oldProcessingArr);
-    }
-  }
-
   setTasksFor(originalDate, curr);
-  
+
   const nextArr = tasksFor(key);
   nextArr.push(removedItem);
-  
-  if (processingItem) {
-    const newProcessingDate = shiftDateStr(key, 14);
-    const targetProcessingArr = tasksFor(newProcessingDate);
-    targetProcessingArr.push(processingItem);
-    setTasksFor(newProcessingDate, targetProcessingArr);
-  }
-  
+
   setTasksFor(key, nextArr);
   
   renderTasks();
@@ -2107,27 +1739,18 @@ taskForm.addEventListener('submit', e=>{
   const et=taskEndTimeInput.value;
   const n=taskNoteInput.value.trim();
   const tc=taskCourierSelect.value;
-  const tcl=taskClientSelect.value;
   const tr=taskTrackingInput.value.trim();
-  const r1=taskRef1Input.value.trim();
-  const r2=taskRef2Input.value.trim();
   const tagsList = Array.from(selectedAddTags);
-  const issuePeopleList = taskIssuePeople.value.split('\n').map(x => x.trim()).filter(Boolean);
   if(!v) return;
-  addTask(v, n, r1, r2, tc, tcl, tr, st, et, tagsList, issuePeopleList);
+  addTask(v, n, tc, tr, st, et, tagsList);
   taskInput.value='';
   taskStartTimeInput.value='';
   taskEndTimeInput.value='';
   taskNoteInput.value='';
   taskCourierSelect.value='Star Track';
-  taskClientSelect.value='';
   taskTrackingInput.value='';
-  taskRef1Input.value='';
-  taskRef2Input.value='';
   selectedAddTags.clear();
   renderAddTags();
-  taskIssuePeople.value='';
-  issuePeopleGroup.classList.add('hidden');
 });
 
 closePanel.addEventListener('click', closeDay);
